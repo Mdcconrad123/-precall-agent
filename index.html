@@ -251,7 +251,7 @@ async function runPipeline(account, onStep) {
   // Step 1: Pull data — instant, assembles local mock objects
   // Field-level gap detection runs here before prompts fire
   onStep("fetch");
-  const rawData = JSON.stringify({ sf: account.salesforce, gong: account.gong });
+  const rawData = JSON.stringify({ companyContext: account.companyContext, sf: account.salesforce, gong: account.gong });
 
   // ── FIELD-LEVEL GAP DETECTION ─────────────────────────────────────────────
   // Check each required field individually. Build a dataGaps array that
