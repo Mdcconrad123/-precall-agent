@@ -225,25 +225,34 @@ const ACCOUNTS = [
 ];
 
 // ── CLAUDE ────────────────────────────────────────────────────────────────────
-async function callClaude(system, user) {
-  const res = await fetch("/.netlify/functions/claude", {
+async function callClaude(system, user, apiKey) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true",
+    },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 3000,
+      max_tokens: 2000,
       system,
       messages: [{ role: "user", content: user }],
     }),
   });
   const data = await res.json();
+  if (!res.ok) {
+    console.error("API ERROR", res.status, JSON.stringify(data));
+    throw new Error(data.error?.message || "API error " + res.status);
+  }
   const text = data.content?.find(b => b.type === "text")?.text || "{}";
   try { return JSON.parse(text.replace(/```json\n?|```/g, "").trim()); }
-  catch { return {}; }
+  catch(e) { console.error("JSON PARSE FAIL:", text.substring(0,300)); return {}; }
 }
 
 // ── PIPELINE ──────────────────────────────────────────────────────────────────
-async function runPipeline(account, onStep) {
+async function runPipeline(account, onStep, apiKey) {
   const isMissingGong  = account.id === "missingdata";
   const isFirstTime    = account.id === "newco";
   const isConflicting  = account.id === "globex";
@@ -251,7 +260,7 @@ async function runPipeline(account, onStep) {
   // Step 1: Pull data — instant, assembles local mock objects
   // Field-level gap detection runs here before prompts fire
   onStep("fetch");
-  const rawData = JSON.stringify({ companyContext: account.companyContext, sf: account.salesforce, gong: account.gong });
+  const rawData = JSON.stringify({ sf: account.salesforce, gong: account.gong });
 
   // ── FIELD-LEVEL GAP DETECTION ─────────────────────────────────────────────
   // Check each required field individually. Build a dataGaps array that
@@ -366,7 +375,8 @@ CONFLICTING SIGNALS (positive Gong + At Risk Salesforce):
   Add the Salesforce risk indicator to risks_from_history even if Gong is positive.
 
 No markdown fences. Return raw JSON only.`,
-      `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`
+      `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`,
+      apiKey
     ),
     // Call B: generate forward-looking recommendations directly from raw data
     callClaude(
@@ -437,7 +447,8 @@ CONFLICTING SIGNALS (positive Gong + At Risk Salesforce):
     Salesforce status — the AE must name it, not avoid it.
 
 No markdown fences. Return raw JSON only.`,
-      `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`
+      `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`,
+      apiKey
     ),
   ]);
 
@@ -889,6 +900,7 @@ function App() {
   const [tab, setTab] = useState("slack");
   const [error, setError] = useState(null);
   const [hasRun, setHasRun] = useState(false);
+  const [apiKey, setApiKey] = useState("");
 
   const account = ACCOUNTS.find(a => a.id === selectedId);
   const isRunning = !!activeStep;
@@ -902,7 +914,7 @@ function App() {
         const idx = stepOrder.indexOf(step);
         setActiveStep(step);
         setDoneSteps(stepOrder.slice(0, idx));
-      });
+      }, apiKey);
       setDoneSteps(stepOrder);
       setActiveStep(null);
       setResults(res);
@@ -994,7 +1006,20 @@ function App() {
             </div>
           )}
 
-          <button className="run-btn" disabled={!selectedId || isRunning} onClick={run}>
+          <div style={{ padding: "0 0 12px" }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Anthropic API Key</div>
+            <input
+              type="password"
+              placeholder="sk-ant-..."
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              style={{ width: "100%", padding: "8px 10px", borderRadius: 6, border: "1px solid #d1d5db",
+                fontSize: 12, fontFamily: "monospace", boxSizing: "border-box",
+                background: apiKey ? "#f0fdf4" : "#fff", outline: "none" }}
+            />
+            {!apiKey && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>Required to run agent</div>}
+          </div>
+          <button className="run-btn" disabled={!selectedId || isRunning || !apiKey} onClick={run}>
             {isRunning ? "⟳  Running..." : "▶  Run Agent"}
           </button>
 
