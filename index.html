@@ -289,6 +289,7 @@ async function runPipeline(account, onStep) {
 
   // Step 2: Synthesize — fire both Claude calls in parallel for speed
   onStep("synthesize");
+  console.log("RAW DATA SENT:", rawData.substring(0, 500));
   const [history_analysis, recommendations] = await Promise.all([
     // Call A: extract facts + analyze history in one shot
     callClaude(
@@ -449,6 +450,7 @@ No markdown fences. Return raw JSON only.`,
     typeof x === "string" ? x :
     typeof x === "object" && x !== null ? (x.signal || x.text || x.value || x.detail || x.point || x.note || JSON.stringify(x)) : String(x ?? "")
   );
+  console.log("HISTORY ANALYSIS RETURNED:", JSON.stringify(history_analysis));
   if (history_analysis) {
     history_analysis.key_signals        = normalizeStrArray(history_analysis.key_signals);
     history_analysis.risks_from_history = normalizeStrArray(history_analysis.risks_from_history);
