@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Pre-Call Intelligence Agent — Laurel AI Ops</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script>window.BABEL_DISABLE_PRODUCTION_WARNING = true;</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html, body, #root { height: 100%; margin: 0; padding: 0; }
+    #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; font-family: system-ui, sans-serif; background: #f9fafb; color: #6b7280; font-size: 14px; }
+    #loading .dot { width: 8px; height: 8px; border-radius: 50%; background: #2563eb; display: inline-block; animation: bounce 1s infinite; }
+    #loading .dot:nth-child(2) { animation-delay: .15s; } #loading .dot:nth-child(3) { animation-delay: .3s; }
+    @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div style="font-size:20px">⚡</div>
+    <div style="display:flex;gap:6px"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    <div>Loading Pre-Call Intelligence Agent...</div>
+  </div>
+  <div id="root"></div>
+  <script>
+    // Hide loading screen once React renders
+    var _origRender = ReactDOM.createRoot;
+    window.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        var loading = document.getElementById('loading');
+        if (loading) loading.style.display = 'none';
+      }, 100);
+    });
+  </script>
+  <script type="text/babel" data-presets="react">
+const { useState } = React;
+
+// ── ACCOUNTS ──────────────────────────────────────────────────────────────────
+const ACCOUNTS = [
+  {
+    id: "acme",
+    name: "Acme Corp",
+    ae: "Marcus R.",
+    aeAvatar: "MR",
+    callTime: "Today at 2:30 PM",
+    callType: "Negotiation Check-in",
+    scenario: {
+      tag: "Standard",
+      label: "Normal Report",
+      color: "#2563eb",
+      description: "A healthy deal with rich Salesforce and Gong data across 4 calls over 6 weeks. The baseline — what a fully populated brief looks like when all integrations are working and there's a strong history to draw from.",
+    },
+    companyContext: "Acme Corp is a mid-market SaaS company (~420 employees) focused on B2B workflow automation. They raised a $28M Series B in late 2023 and are actively scaling their sales org from 18 to 35 AEs. Their CRO, David Park, joined 4 months ago from Salesforce and is pushing hard to modernize the sales stack before Q2. The company runs on HubSpot today but is evaluating replacements.",
+    salesforce: {
+      account: "Acme Corp", industry: "SaaS / B2B", employees: 420,
+      stage: "Negotiation", dealSize: "$100,000", dealRisk: "On Track",
+      contacts: [
+        { name: "Jane Smith", title: "VP of Sales", email: "jsmith@acmecorp.com" },
+        { name: "Bob Lee", title: "Senior Engineer", email: "blee@acmecorp.com" },
+        { name: "David Park", title: "CRO", email: "dpark@acmecorp.com" },
+        { name: "Lisa Tran", title: "Head of RevOps", email: "ltran@acmecorp.com" },
+      ],
+      openOpps: [
+        { id: "Opp-881", value: "$100,000", stage: "Negotiation" },
+        { id: "Opp-904", value: "$18,000", stage: "Expansion — add-on seats under discussion" },
+      ],
+      history: [
+        { date: "Feb 14", type: "Call", note: "Legal redline received — 2 clauses flagged around data residency and SLA uptime guarantee" },
+        { date: "Feb 10", type: "Email", note: "Marcus sent revised pricing proposal with annual commitment discount; Jane confirmed receipt" },
+        { date: "Feb 1", type: "Demo", note: "60-min technical deep-dive with Bob and Lisa — integration with HubSpot and Outreach confirmed feasible" },
+        { date: "Jan 28", type: "Email", note: "Jane introduced David Park (CRO) to the thread — he asked for an ROI model" },
+        { date: "Jan 22", type: "Demo", note: "Product demo for Jane and RevOps team — very positive reaction to the pre-call brief automation workflow" },
+        { date: "Jan 15", type: "Call", note: "Discovery call with Jane — confirmed 3 core pain points around AE prep time, CRM hygiene, and forecast accuracy" },
+        { date: "Jan 8", type: "Email", note: "Initial cold outreach via LinkedIn — Jane responded same day and booked a call" },
+      ],
+    },
+    gong: {
+      calls: [
+        {
+          date: "Feb 14", duration: "28 min", sentiment: 0.61,
+          participants: ["Jane Smith", "Lisa Tran", "AE: Marcus R."],
+          highlights: [
+            "Legal flagged two contract clauses: data residency (EU requirement) and 99.9% SLA uptime",
+            "Jane confirmed these are the only two blockers — deal is otherwise ready to sign",
+            "Lisa asked if implementation timeline can be compressed to 3 weeks — wants to go live before Q2 kickoff",
+            "Marcus committed to looping in solutions engineering on the SLA question this week",
+            "Tone: professional and close-to-done — Jane said 'we just need to get legal comfortable'",
+          ],
+        },
+        {
+          date: "Feb 1", duration: "61 min", sentiment: 0.78,
+          participants: ["Jane Smith", "Bob Lee", "Lisa Tran", "AE: Marcus R.", "SE: Priya K."],
+          highlights: [
+            "Bob confirmed HubSpot integration via API is feasible — no custom dev needed",
+            "Lisa walked through their current Outreach setup and agreed the data sync would be seamless",
+            "Jane asked about multi-region data storage — flagged this as a legal requirement early",
+            "Bob: 'The architecture is cleaner than what we have now — I'd actually prefer this'",
+            "Discussed seat allocation: 22 AE seats initially, with option to expand to 40 by Q3",
+            "ROI model shared in real-time — Lisa calculated 34% reduction in AE prep time based on their data",
+          ],
+        },
+        {
+          date: "Jan 22", duration: "45 min", sentiment: 0.82,
+          participants: ["Jane Smith", "Lisa Tran", "AE: Marcus R."],
+          highlights: [
+            "Jane: 'This is the first tool I've seen that actually addresses the prep problem — our AEs waste so much time'",
+            "Lisa immediately asked about Salesforce and HubSpot compatibility — top of mind for RevOps",
+            "Demo of the pre-call brief automation received the strongest reaction — Jane said she wants this for her team 'yesterday'",
+            "Pricing discussed informally — Jane said $100k is within budget range, no formal approval needed below $150k",
+            "Agreed: Jane will bring in Bob (engineering) and Lisa (RevOps) for the technical deep-dive",
+            "No objections raised — call ended with Jane asking how quickly they could get started",
+          ],
+        },
+        {
+          date: "Jan 15", duration: "33 min", sentiment: 0.58,
+          participants: ["Jane Smith", "AE: Marcus R."],
+          highlights: [
+            "Jane confirmed 3 pain points: (1) AEs spending 30-45 min on pre-call prep, (2) CRM data quality is poor because AEs don't log calls, (3) forecast accuracy is low — managers don't trust pipeline",
+            "Current stack: HubSpot CRM, Outreach SEP, Gong for call recording — no pre-call intelligence layer",
+            "Jane is the budget holder for anything under $150k — no committee needed",
+            "Team size growing from 18 to 35 AEs by Q2 — urgency is real, they need a solution before hiring ramps",
+            "Jane expressed frustration with current vendor (unnamed) who promised similar capabilities but underdelivered",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "globex",
+    name: "Globex Inc",
+    ae: "Priya S.",
+    aeAvatar: "PS",
+    callTime: "Today at 11:00 AM",
+    callType: "Strategic Review",
+    scenario: {
+      tag: "Edge Case 1",
+      label: "Mixed Signals",
+      color: "#d97706",
+      description: "Gong recordings show a highly positive, excited champion — but Salesforce shows the deal is At Risk with no reply to the contract for 12 days. The agent must surface both signals without presenting a misleadingly rosy picture.",
+    },
+    companyContext: "Globex Inc is an enterprise SaaS company (~1,200 employees) in manufacturing ops software. Recently promoted Rachel Moore to VP of Operations after a major internal restructuring.",
+    salesforce: {
+      account: "Globex Inc", industry: "Enterprise SaaS", employees: 1200,
+      stage: "Negotiation", dealSize: "$180,000", dealRisk: "At Risk",
+      contacts: [
+        { name: "Rachel Moore", title: "VP of Operations", email: "rmoore@globex.com" },
+        { name: "Dan Carter", title: "CFO", email: "dcarter@globex.com" },
+      ],
+      openOpps: [{ id: "Opp-445", value: "$180,000", stage: "Negotiation" }],
+      history: [
+        { date: "Feb 5", type: "Email", note: "Contract sent — no reply in 12 days" },
+        { date: "Jan 28", type: "Call", note: "Rachel seemed excited but said CFO needs to sign off" },
+        { date: "Jan 10", type: "Demo", note: "Strong demo — Rachel loved the workflow automation features" },
+      ],
+    },
+    gong: {
+      calls: [
+        {
+          date: "Jan 28", duration: "44 min", sentiment: 0.68,
+          participants: ["Rachel Moore", "AE: Priya S."],
+          highlights: [
+            "Rachel: 'I'm fully sold — this is exactly what we need'",
+            "She committed to pushing the contract through by end of month",
+            "No technical objections raised on the call",
+            "Tone was enthusiastic throughout — no hesitation detected",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "missingdata",
+    name: "Apex Dynamics",
+    ae: "Devon L.",
+    aeAvatar: "DL",
+    callTime: "Today at 3:15 PM",
+    callType: "Follow-up Call",
+    scenario: {
+      tag: "Edge Case 2",
+      label: "Missing Data",
+      color: "#7c3aed",
+      description: "Gong returned no call data for this account. The agent generates a brief from Salesforce records only, flags the missing Gong fields in a Data Gaps table, and warns the AE they are going in without call history or sentiment data.",
+    },
+    salesforce: {
+      account: "Apex Dynamics", industry: "Manufacturing SaaS", employees: 310,
+      stage: "Proposal", dealSize: "$65,000", dealRisk: "On Track",
+      contacts: [
+        { name: "Ryan Park", title: "Head of Engineering", email: "rpark@apexdynamics.io" },
+        { name: "Mei Chen", title: "VP Product", email: "mchen@apexdynamics.io" },
+      ],
+      openOpps: [{ id: "Opp-209", value: "$65,000", stage: "Proposal" }],
+      history: [
+        { date: "Feb 12", type: "Call", note: "Strong interest in API-first approach, asked for custom pricing" },
+        { date: "Feb 3",  type: "Demo", note: "Product demo — Ryan very engaged with workflow automation features" },
+        { date: "Jan 22", type: "Email", note: "Inbound from website — Ryan filled out the contact form" },
+      ],
+    },
+    gong: { calls: [] },
+  },
+  {
+    id: "newco",
+    name: "NewCo",
+    ae: "Sara T.",
+    aeAvatar: "ST",
+    callTime: "Today at 4:00 PM",
+    callType: "First Discovery Call",
+    scenario: {
+      tag: "Edge Case 3",
+      label: "First-Time Prospect",
+      color: "#059669",
+      description: "No prior call history or Salesforce activity for this account. The agent switches to first-call mode — surfacing open-ended questions to understand the prospect's situation, goals, and fit, rather than prep-based talking points that don't yet exist.",
+    },
+    salesforce: {
+      account: "NewCo", industry: "FinTech", employees: 85,
+      stage: "Prospecting", dealSize: "Unknown", dealRisk: "N/A",
+      contacts: [{ name: "Alice Johnson", title: "CEO & Co-Founder", email: "alice@newco.io" }],
+      openOpps: [],
+      history: [],
+    },
+    gong: { calls: [] },
+  },
+];
+
+// ── CLAUDE ────────────────────────────────────────────────────────────────────
+async function callClaude(system, user) {
+  const res = await fetch("/.netlify/functions/claude", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1600,
+      system,
+      messages: [{ role: "user", content: user }],
+    }),
+  });
+  const data = await res.json();
+  const text = data.content?.find(b => b.type === "text")?.text || "{}";
+  try { return JSON.parse(text.replace(/```json\n?|```/g, "").trim()); }
+  catch { return {}; }
+}
+
+// ── PIPELINE ──────────────────────────────────────────────────────────────────
+async function runPipeline(account, onStep) {
+  const isMissingGong  = account.id === "missingdata";
+  const isFirstTime    = account.id === "newco";
+  const isConflicting  = account.id === "globex";
+
+  // Step 1: Pull data — instant, assembles local mock objects
+  // Field-level gap detection runs here before prompts fire
+  onStep("fetch");
+  const rawData = JSON.stringify({ sf: account.salesforce, gong: account.gong });
+
+  // ── FIELD-LEVEL GAP DETECTION ─────────────────────────────────────────────
+  // Check each required field individually. Build a dataGaps array that
+  // gets passed to the brief renderer. Each gap has: field, source, label, action.
+  const sf = account.salesforce;
+  const gongCalls = account.gong?.calls || [];
+
+  const dataGaps = [];
+
+  // Salesforce fields
+  if (!sf.stage || sf.stage === "Unknown" || sf.stage === "N/A")
+    dataGaps.push({ field: "deal_stage", source: "Salesforce", label: "Deal Stage",
+      action: "Open the opportunity in Salesforce and set the current deal stage." });
+  if (!sf.contacts || sf.contacts.length === 0)
+    dataGaps.push({ field: "contacts", source: "Salesforce", label: "Contacts",
+      action: "Add the prospect's contacts (name, title, email) to the Salesforce account." });
+  if (!sf.history || sf.history.length === 0)
+    dataGaps.push({ field: "activity_history", source: "Salesforce", label: "Activity History",
+      action: "Log recent emails, calls, and meetings as activity records in Salesforce." });
+  if (!sf.openOpps || sf.openOpps.length === 0)
+    dataGaps.push({ field: "open_opportunities", source: "Salesforce", label: "Open Opportunities",
+      action: "Create an opportunity record in Salesforce for this deal." });
+
+  // Gong fields
+  if (gongCalls.length === 0)
+    dataGaps.push({ field: "call_highlights", source: "Gong", label: "Call Highlights",
+      action: "Ensure calls with this account are being recorded in Gong. Check that the Gong bot is admitted to meetings." });
+  else if (!gongCalls.some(c => c.highlights && c.highlights.length > 0))
+    dataGaps.push({ field: "call_highlights", source: "Gong", label: "Call Highlights",
+      action: "Calls are recorded but no highlights were extracted. Check that Gong highlight extraction is enabled for this account." });
+
+  if (gongCalls.length === 0 || !gongCalls.some(c => typeof c.sentiment === "number"))
+    dataGaps.push({ field: "sentiment_trends", source: "Gong", label: "Sentiment Trends",
+      action: "Sentiment data requires recorded calls with Gong AI analysis enabled. No sentiment data is available for this account." });
+
+  // Step 2: Synthesize — fire both Claude calls in parallel for speed
+  onStep("synthesize");
+  const [history_analysis, recommendations] = await Promise.all([
+    // Call A: extract facts + analyze history in one shot
+    callClaude(
+      `You are a senior sales intelligence analyst. Produce a thorough historical analysis. The richer the data, the more detailed your output.
+
+FIRST-TIME PROSPECT OVERRIDE: If first_time_prospect = true OR calls = [] AND activity_history = [], set key_signals = [], risks_from_history = [], sentiment_score = null, sentiment_label = 'First call — no history', and account_summary to 1-2 sentences confirming only what Salesforce shows.
+
+Otherwise output JSON with:
+- sentiment_score: float -1.0 to 1.0 (recency-weighted)
+- sentiment_label: string (e.g. 'Consistently Positive')
+- account_summary: 3-4 sentences on company situation and deal health
+- call_progression: 2-4 sentences on how the relationship evolved
+- key_signals: array — every meaningful signal, with direct quotes. Min 4.
+- risks_from_history: array — every risk and stakeholder gap. Min 2.
+- objections_raised: array — every objection the prospect actually voiced.
+- data_warnings: array — always populated when edge cases are present.
+
+Missing Gong: set sentiment = null, omit call_progression, note in warnings.
+Mixed signals (positive Gong + At Risk SF): surface both explicitly.
+No markdown fences. Return raw JSON only.`,
+      `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`
+    ),
+    // Call B: generate forward-looking recommendations directly from raw data
+    callClaude(
+      `You are an expert B2B sales coach. Be concise — AE reads this in 2 minutes. Every recommendation must be grounded in the data. No generic advice.
+
+FIRST-TIME PROSPECT OVERRIDE: If first_time_prospect = true, set:
+  call_goal: 'Run discovery — understand situation and fit before pitching.'
+  talking_points: []
+  suggested_agenda: ['Opening: confirm agenda', 'Discovery: open-ended questions on process and pain points', 'Next step: agree follow-up']
+  likely_objections: []
+
+Otherwise output JSON with:
+- call_goal: 1 sentence — single most important thing to accomplish
+- win_condition: 1 sentence — what a successful outcome looks like
+- biggest_risk: 1 sentence — most likely thing to derail the call
+- suggested_agenda: array of 3 items max, format 'Topic: rationale'
+- talking_points: array of 3 strings max, each grounded in a specific quote
+- likely_objections: [ { objection, response } ] — 2 items max
+- opening_line: 1 sentence referencing the last interaction specifically
+
+Missing Gong: base talking points on SF activity only.
+Mixed signals: orient call_goal around resolving the discrepancy.
+No markdown fences. Return raw JSON only.`,
+      `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`
+    ),
+  ]);
+
+  // Steps 3 & 4 resolve instantly once Promise.all completes
+  onStep("compile");
+  onStep("deliver");
+
+  // ── NORMALIZE API OUTPUTS — coerce all array fields to string arrays ─────────
+  const normalizeStrArray = (arr) => (arr || []).map(x =>
+    typeof x === "string" ? x :
+    typeof x === "object" && x !== null ? (x.signal || x.text || x.value || x.detail || x.point || x.note || JSON.stringify(x)) : String(x ?? "")
+  );
+  if (history_analysis) {
+    history_analysis.key_signals        = normalizeStrArray(history_analysis.key_signals);
+    history_analysis.risks_from_history = normalizeStrArray(history_analysis.risks_from_history);
+    history_analysis.objections_raised  = normalizeStrArray(history_analysis.objections_raised);
+    history_analysis.data_warnings      = normalizeStrArray(history_analysis.data_warnings);
+    if (typeof history_analysis.account_summary  === "object") history_analysis.account_summary  = JSON.stringify(history_analysis.account_summary);
+    if (typeof history_analysis.call_progression === "object") history_analysis.call_progression = JSON.stringify(history_analysis.call_progression);
+    if (typeof history_analysis.sentiment_label  === "object") history_analysis.sentiment_label  = JSON.stringify(history_analysis.sentiment_label);
+  }
+  if (recommendations) {
+    recommendations.talking_points   = normalizeStrArray(recommendations.talking_points);
+    recommendations.suggested_agenda = normalizeStrArray(recommendations.suggested_agenda);
+    if (typeof recommendations.call_goal     === "object") recommendations.call_goal     = JSON.stringify(recommendations.call_goal);
+    if (typeof recommendations.win_condition === "object") recommendations.win_condition = JSON.stringify(recommendations.win_condition);
+    if (typeof recommendations.biggest_risk  === "object") recommendations.biggest_risk  = JSON.stringify(recommendations.biggest_risk);
+    if (typeof recommendations.opening_line  === "object") recommendations.opening_line  = JSON.stringify(recommendations.opening_line);
+    // Normalize likely_objections — ensure each item has string objection+response
+    recommendations.likely_objections = (recommendations.likely_objections || []).map(o =>
+      typeof o === "string" ? { objection: o, response: "" } :
+      typeof o === "object" && o !== null ? { objection: String(o.objection || o.they_say || o.text || ""), response: String(o.response || o.you_say || o.answer || "") } :
+      { objection: String(o), response: "" }
+    );
+  }
+
+  return { history_analysis, recommendations, isMissingGong, isFirstTime, isConflicting, dataGaps };
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const sentimentColor = s =>
+  s >= 0.5 ? "#15803d" : s >= 0.1 ? "#4d7c0f" : s >= -0.1 ? "#b45309" : "#b91c1c";
+const sentimentLabel = s =>
+  s >= 0.5 ? "Positive" : s >= 0.1 ? "Leaning Positive" : s >= -0.1 ? "Neutral" : s >= -0.4 ? "Cautious" : "Negative";
+const sentimentDot = s =>
+  s >= 0.5 ? "#22c55e" : s >= 0.1 ? "#84cc16" : s >= -0.1 ? "#f59e0b" : s >= -0.4 ? "#f97316" : "#ef4444";
+
+const STEPS = [
+  { key: "fetch",     label: "Data Pull",     sub: "Salesforce + Gong" },
+  { key: "synthesize",label: "Synthesize",    sub: "Analyze history + signals" },
+  { key: "compile",   label: "Generate",      sub: "Talking points + agenda" },
+  { key: "deliver",   label: "Compile Brief", sub: "Format for Slack delivery" },
+];
+
+// ── DIVIDER LABEL ─────────────────────────────────────────────────────────────
+function SectionDivider({ label, sublabel }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "24px 0 16px" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".07em", whiteSpace: "nowrap" }}>{label}</div>
+      {sublabel && <div style={{ fontSize: 11, color: "#9ca3af", fontStyle: "italic" }}>{sublabel}</div>}
+      <div style={{ flex: 1, height: 1, background: "#e5e7eb" }} />
+    </div>
+  );
+}
+
+// ── CARD ──────────────────────────────────────────────────────────────────────
+function Card({ title, subtitle, children, warning }) {
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", marginBottom: 12 }}>
+      <div style={{ padding: "14px 18px 12px", borderBottom: children ? "1px solid #f3f4f6" : "none" }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#111827", marginBottom: subtitle ? 3 : 0 }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 12, color: "#9ca3af" }}>{subtitle}</div>}
+      </div>
+      {warning && (
+        <div style={{ background: "#fffbeb", borderBottom: "1px solid #fde68a", padding: "8px 18px", display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <span style={{ flexShrink: 0 }}>⚠️</span>
+          <span style={{ fontSize: 12, color: "#92400e" }}>{warning}</span>
+        </div>
+      )}
+      {children && <div style={{ padding: "14px 18px" }}>{children}</div>}
+    </div>
+  );
+}
+
+function BulletList({ items, color = "#374151", dotColor = "#d1d5db" }) {
+  return (
+    <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+      {(items || []).map((item, i) => (
+        <li key={i} style={{ display: "flex", gap: 8, marginBottom: 7, alignItems: "flex-start" }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 6 }} />
+          <span style={{ fontSize: 13, color, lineHeight: 1.55 }}>{typeof item === "object" && item !== null ? (item.signal || item.text || item.value || item.detail || JSON.stringify(item)) : String(item ?? "")}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// ── REPORT ────────────────────────────────────────────────────────────────────
+function Report({ account, results }) {
+  const { history_analysis, recommendations, isMissingGong, isFirstTime, isConflicting, dataGaps } = results;
+
+  const sc = typeof history_analysis?.sentiment_score === "number" ? history_analysis.sentiment_score : 0;
+  const lastActivity = account.salesforce.history[0] || null;
+
+  return (
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", color: "#111827", maxWidth: 720, margin: "0 auto" }}>
+
+      {/* ── TOP META BAR ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: sentimentDot(sc), flexShrink: 0 }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: sentimentColor(sc) }}>{sentimentLabel(sc)}</span>
+          <span style={{ color: "#d1d5db", fontSize: 13 }}>·</span>
+          <span style={{ fontSize: 13, color: "#6b7280" }}>Sentiment {sc.toFixed(1)}</span>
+        </div>
+        <span style={{ color: "#d1d5db" }}>·</span>
+        <span style={{ fontSize: 13, color: "#6b7280" }}>
+          <strong style={{ color: "#374151" }}>Primary motion:</strong> {recommendations.call_goal}
+        </span>
+        {(isMissingGong || isConflicting || isFirstTime) && (
+          <>
+            <span style={{ color: "#d1d5db" }}>·</span>
+            <span style={{ fontSize: 12, background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a", borderRadius: 4, padding: "1px 7px", fontWeight: 600 }}>
+              {isMissingGong ? "⚠ No Gong Recordings Found" : isFirstTime ? "👋 First Call — Discovery Mode" : "⚡ Mixed Signals"}
+            </span>
+          </>
+        )}
+      </div>
+
+      {/* ══════════════════════════════════════════════
+          SECTION 1: HISTORY & WHAT WE KNOW
+      ══════════════════════════════════════════════ */}
+      <SectionDivider label="What We Know" sublabel="— pulled from Salesforce & Gong recordings" />
+
+      {/* Account Overview */}
+      <Card
+        title="Account Overview"
+        subtitle="Company background, recent context, and how the relationship has evolved"
+        warning={isMissingGong ? "⚠ No Gong call recordings found for this account. This brief is based on Salesforce records only. Ensure calls are being recorded in Gong so future briefs include call history and sentiment data." : isFirstTime ? "👋 No prior call history or Salesforce activity found for this account. This brief is in first-call mode — focused on discovery questions rather than prep-based talking points. Please add contact and company details to Salesforce after the call." : isConflicting ? "⚡ Mixed signals detected: Gong shows high prospect enthusiasm but Salesforce marks this deal At Risk with no contract response for 12 days. Review both sections carefully." : null}
+      >
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>About the Company</div>
+          <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{account.companyContext}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>Deal Situation</div>
+          <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{typeof history_analysis.account_summary === "object" ? JSON.stringify(history_analysis.account_summary) : String(history_analysis.account_summary ?? "")}</div>
+        </div>
+        {history_analysis.call_progression && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f3f4f6" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>
+              How Calls Have Progressed
+            </div>
+            <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.6 }}>{typeof history_analysis.call_progression === "object" ? JSON.stringify(history_analysis.call_progression) : String(history_analysis.call_progression ?? "")}</div>
+          </div>
+        )}
+      </Card>
+
+      {/* Key Signals grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+        <Card title="Key Signals from Past Calls" subtitle="What the prospect has actually said or done">
+          {(history_analysis.key_signals || []).length > 0
+            ? <BulletList items={history_analysis.key_signals} dotColor="#3b82f6" />
+            : <div style={{ fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>No prior call data available.</div>
+          }
+        </Card>
+        <Card title="Risks Visible in the Data" subtitle="Red flags from recorded calls and CRM history">
+          {(history_analysis.risks_from_history || []).length > 0
+            ? <BulletList items={history_analysis.risks_from_history} dotColor="#ef4444" />
+            : <div style={{ fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>No risks identified from available data.</div>
+          }
+        </Card>
+      </div>
+
+      {/* Objections already raised */}
+      {(history_analysis.objections_raised || []).length > 0 && (
+        <Card title="Objections Already Raised" subtitle="Things the prospect has actually pushed back on in prior calls">
+          <BulletList items={history_analysis.objections_raised} dotColor="#f97316" />
+        </Card>
+      )}
+
+      {/* Account at a Glance */}
+      <Card title="Account at a Glance" subtitle="Contacts, open opportunities, and recent activity">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 8 }}>Contacts</div>
+            {account.salesforce.contacts.map((c, i) => (
+              <div key={i} style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{c.name}</div>
+                <div style={{ fontSize: 12, color: "#6b7280" }}>{c.title}</div>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 8 }}>Open Opp</div>
+            {account.salesforce.openOpps && account.salesforce.openOpps.length > 0
+              ? account.salesforce.openOpps.map((o, i) => (
+                <div key={i} style={{ marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{o.value}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280" }}>{o.id} · {o.stage}</div>
+                </div>
+              ))
+              : <div style={{ fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>No open opp yet</div>
+            }
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 8 }}>Last Activity</div>
+            {lastActivity
+              ? <>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{lastActivity.type} on {lastActivity.date}</div>
+                  <div style={{ fontSize: 12, color: "#6b7280", lineHeight: 1.4, marginTop: 2 }}>{lastActivity.note}</div>
+                </>
+              : <div style={{ fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>No prior activity</div>
+            }
+          </div>
+        </div>
+      </Card>
+
+      {/* ══════════════════════════════════════════════
+          SECTION 2: RECOMMENDATIONS
+      ══════════════════════════════════════════════ */}
+      <SectionDivider label="Recommendations" sublabel="— AI-generated, forward-looking guidance for this call" />
+
+      {/* Call strategy */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+        {[
+          {
+            emoji: "🎯",
+            title: "Goal for This Call",
+            sub: "The single most important thing to accomplish",
+            value: recommendations.call_goal,
+            bg: "#f9fafb",
+          },
+          {
+            emoji: "🏆",
+            title: "What Winning Looks Like",
+            sub: "The outcome that counts as success",
+            value: recommendations.win_condition,
+            bg: "#f0fdf4",
+            border: "#d1fae5",
+          },
+          {
+            emoji: "⚠️",
+            title: "Biggest Risk on This Call",
+            sub: "Most likely thing to derail the call",
+            value: recommendations.biggest_risk,
+            bg: "#fff7ed",
+            border: "#fed7aa",
+          },
+        ].map((item, i) => (
+          <div key={i} style={{ background: item.bg, border: `1px solid ${item.border || "#e5e7eb"}`, borderRadius: 8, padding: "14px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4 }}>
+              <span style={{ fontSize: 14 }}>{item.emoji}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#111827" }}>{item.title}</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 8, lineHeight: 1.4, fontStyle: "italic" }}>{item.sub}</div>
+            <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.5 }}>{typeof item.value === "object" && item.value !== null ? JSON.stringify(item.value) : String(item.value ?? "")}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Suggested Agenda + Gameplan */}
+      <Card title="Suggested Call Agenda & Gameplan" subtitle="Recommended structure for the call, with rationale for each item">
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {(recommendations.suggested_agenda || []).map((item, i) => {
+            const safeItem = typeof item === "object" && item !== null ? (item.topic ? `${item.topic}: ${item.rationale || ""}` : JSON.stringify(item)) : String(item ?? "");
+            const parts = safeItem.includes(":") ? [safeItem.slice(0, safeItem.indexOf(":")), safeItem.slice(safeItem.indexOf(":") + 1).trim()] : [safeItem, ""];
+            return (
+              <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <div style={{ width: 22, height: 22, borderRadius: 6, background: "#eff6ff", border: "1px solid #bfdbfe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#1d4ed8", flexShrink: 0, marginTop: 1 }}>{i + 1}</div>
+                <div>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{parts[0]}</span>
+                  {parts[1] && <span style={{ fontSize: 13, color: "#6b7280" }}>: {parts[1]}</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {recommendations.opening_line && (
+          <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid #f3f4f6" }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 5 }}>Suggested Opening Line</div>
+            <div style={{ fontSize: 13, color: "#1d4ed8", fontStyle: "italic", lineHeight: 1.6 }}>"{recommendations.opening_line}"</div>
+          </div>
+        )}
+      </Card>
+
+      {/* What to Talk About */}
+      <Card title="What to Talk About" subtitle="Specific topics to raise — grounded in what you already know about this account">
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {(recommendations.talking_points || []).map((pt, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", flexShrink: 0, minWidth: 14 }}>{i + 1}.</span>
+              <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.55 }}>{pt}</span>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Likely Pushback */}
+      {(recommendations.likely_objections || []).length > 0 && (
+        <Card title="Likely Pushback — and How to Handle It" subtitle="Objections the agent predicts based on signals, with suggested counters">
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {recommendations.likely_objections.map((obj, i) => (
+              <div key={i} style={{ borderRadius: 6, overflow: "hidden", border: "1px solid #e5e7eb" }}>
+                <div style={{ background: "#fff7ed", padding: "8px 14px", display: "flex", gap: 6, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 600, flexShrink: 0, marginTop: 1 }}>They say:</span>
+                  <span style={{ fontSize: 13, color: "#c2410c", fontWeight: 600, lineHeight: 1.5 }}>"{typeof obj.objection === "object" ? JSON.stringify(obj.objection) : String(obj.objection ?? "")}"</span>
+                </div>
+                <div style={{ background: "#f9fafb", borderTop: "1px solid #e5e7eb", padding: "8px 14px", display: "flex", gap: 6, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 12, color: "#9ca3af", fontWeight: 600, flexShrink: 0, marginTop: 1 }}>You say:</span>
+                  <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.5 }}>↳ {typeof obj.response === "object" ? JSON.stringify(obj.response) : String(obj.response ?? "")}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* ══════════════════════════════════════════════
+          DATA GAPS SECTION — rendered only when gaps exist
+      ══════════════════════════════════════════════ */}
+      {dataGaps && dataGaps.length > 0 && (
+        <>
+          <SectionDivider label="Data Gaps — Action Required" sublabel="— fields missing from Salesforce or Gong that affected this brief" />
+          <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "14px 16px", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 16 }}>⚠</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+                {dataGaps.length} field{dataGaps.length > 1 ? "s" : ""} missing — this brief may be incomplete
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: "#92400e", marginBottom: 14, lineHeight: 1.5 }}>
+              The following data could not be found in Salesforce or Gong. Sections of this brief that depend on missing fields were either omitted or marked uncertain. Please update these records so future briefs are accurate.
+            </div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #fde68a" }}>
+                  <th style={{ textAlign: "left", padding: "4px 10px 6px 0", color: "#92400e", fontWeight: 700, width: "22%" }}>Missing Field</th>
+                  <th style={{ textAlign: "left", padding: "4px 10px 6px 8px", color: "#92400e", fontWeight: 700, width: "14%" }}>Source</th>
+                  <th style={{ textAlign: "left", padding: "4px 0 6px 8px", color: "#92400e", fontWeight: 700 }}>What to Do</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dataGaps.map((gap, i) => (
+                  <tr key={gap.field} style={{ borderBottom: i < dataGaps.length - 1 ? "1px solid #fef3c7" : "none" }}>
+                    <td style={{ padding: "7px 10px 7px 0", color: "#374151", fontWeight: 600, verticalAlign: "top" }}>{gap.label}</td>
+                    <td style={{ padding: "7px 10px 7px 8px", verticalAlign: "top" }}>
+                      <span style={{
+                        background: gap.source === "Salesforce" ? "#dbeafe" : "#ede9fe",
+                        color: gap.source === "Salesforce" ? "#1d4ed8" : "#6d28d9",
+                        borderRadius: 4, padding: "1px 7px", fontWeight: 600, fontSize: 11
+                      }}>{gap.source}</span>
+                    </td>
+                    <td style={{ padding: "7px 0 7px 8px", color: "#6b7280", lineHeight: 1.5, verticalAlign: "top" }}>{gap.action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {/* Footer */}
+      <div style={{ marginTop: 20, paddingTop: 14, borderTop: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: 12, color: "#9ca3af" }}>⚡ Generated by PreCall Bot · {new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · 4 prompts chained</div>
+        <div style={{ display: "flex", gap: 6 }}>
+          {["👍 Helpful", "📌 Pin", "🔗 Share"].map(a => (
+            <button key={a} style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 5, padding: "4px 10px", fontSize: 12, color: "#6b7280", cursor: "pointer", fontFamily: "inherit", fontWeight: 500 }}>{a}</button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── SLACK SHELL ───────────────────────────────────────────────────────────────
+function SlackShell({ account, results }) {
+  return (
+    <div style={{ background: "#1a1d21", borderRadius: 10, overflow: "hidden", fontFamily: "'Inter', system-ui, sans-serif" }}>
+      {/* Title bar */}
+      <div style={{ background: "#18181b", padding: "9px 16px", display: "flex", alignItems: "center", gap: 6, borderBottom: "1px solid #27272a" }}>
+        {["#ff5f57", "#ffbd2e", "#28ca41"].map(c => <div key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />)}
+        <div style={{ marginLeft: 12, fontSize: 12, color: "#52525b", fontFamily: "monospace" }}># sales-call-briefs</div>
+        <div style={{ marginLeft: "auto", fontSize: 11, color: "#3f3f46" }}>🔒 12 members</div>
+      </div>
+
+      {/* Bot message */}
+      <div style={{ padding: "18px 20px" }}>
+        <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: "linear-gradient(135deg, #4A154B, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>⚡</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#e4e4e7" }}>PreCall Bot</span>
+              <span style={{ fontSize: 11, color: "#52525b" }}>{account.callTime}</span>
+              <span style={{ fontSize: 10, background: "#27272a", color: "#71717a", padding: "1px 6px", borderRadius: 3, fontWeight: 600 }}>APP</span>
+            </div>
+            <div style={{ fontSize: 13, color: "#a1a1aa", marginBottom: 14, lineHeight: 1.6 }}>
+              Hey <span style={{ color: "#7dd3fc" }}>@{account.ae.toLowerCase().replace(/\s/g, "")}</span> — your <strong style={{ color: "#e4e4e7" }}>{account.callType}</strong> with <strong style={{ color: "#e4e4e7" }}>{account.name}</strong> starts in 30 minutes. Here's your brief:
+            </div>
+
+            {/* White report card inset */}
+            <div style={{ background: "#ffffff", borderRadius: 8, padding: "20px 22px", border: "1px solid #2d2d2d" }}>
+              {/* Brief header */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase" }}>Pre-Call Brief</div>
+                <span style={{ background: `${account.scenario.color}15`, color: account.scenario.color, border: `1px solid ${account.scenario.color}30`, borderRadius: 4, padding: "1px 8px", fontSize: 10, fontWeight: 700 }}>{account.scenario.tag}</span>
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: "#111827", marginBottom: 2, letterSpacing: "-0.02em" }}>{account.name}</div>
+              <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>{account.callType} · {account.callTime}</div>
+              <div style={{ height: 1, background: "#f3f4f6", marginBottom: 16 }} />
+              <Report account={account} results={results} />
+            </div>
+
+            {/* Reactions */}
+            <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+              {["👍 3", "🎯 2", "📞 1"].map(r => (
+                <div key={r} style={{ background: "#27272a", border: "1px solid #3f3f46", borderRadius: 12, padding: "3px 10px", fontSize: 12, color: "#71717a", cursor: "pointer" }}>{r}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Thread */}
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid #27272a" }}>
+          <div style={{ fontSize: 12, color: "#52525b", marginBottom: 10 }}>💬 2 replies · View thread</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#a1a1aa", flexShrink: 0 }}>{account.aeAvatar}</div>
+            <div>
+              <div style={{ display: "flex", gap: 6, alignItems: "baseline", marginBottom: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#e4e4e7" }}>{account.ae}</span>
+                <span style={{ fontSize: 11, color: "#52525b" }}>1 min ago</span>
+              </div>
+              <div style={{ fontSize: 13, color: "#a1a1aa" }}>This saves me 30 min of prep 🔥</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App() {
+  const [selectedId, setSelectedId] = useState(null);
+  const [activeStep, setActiveStep] = useState(null);
+  const [doneSteps, setDoneSteps] = useState([]);
+  const [results, setResults] = useState(null);
+  const [tab, setTab] = useState("slack");
+  const [error, setError] = useState(null);
+  const [hasRun, setHasRun] = useState(false);
+
+  const account = ACCOUNTS.find(a => a.id === selectedId);
+  const isRunning = !!activeStep;
+
+  async function run() {
+    if (!account) return;
+    setResults(null); setError(null); setDoneSteps([]); setTab("slack"); setHasRun(true);
+    const stepOrder = ["fetch", "synthesize", "compile", "deliver"];
+    try {
+      const res = await runPipeline(account, step => {
+        const idx = stepOrder.indexOf(step);
+        setActiveStep(step);
+        setDoneSteps(stepOrder.slice(0, idx));
+      });
+      setDoneSteps(stepOrder);
+      setActiveStep(null);
+      setResults(res);
+    } catch (e) {
+      setError(e.message);
+      setActiveStep(null);
+    }
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#f9fafb", color: "#111827", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #f9fafb; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+
+        .acc { cursor: pointer; padding: 11px 12px; border-radius: 7px; border: 1.5px solid #e5e7eb; background: white; transition: all .15s; }
+        .acc:hover { border-color: #93c5fd; background: #f0f9ff; }
+        .acc.sel { border-color: #2563eb; background: #eff6ff; }
+
+        .run-btn { width: 100%; padding: 11px; border: none; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; background: #2563eb; color: white; transition: all .15s; }
+        .run-btn:hover:not(:disabled) { background: #1d4ed8; }
+        .run-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        .tab { padding: 7px 14px; border: none; border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; background: transparent; color: #6b7280; }
+        .tab.on { background: #eff6ff; color: #2563eb; font-weight: 600; }
+        .tab:hover:not(.on) { color: #374151; background: #f3f4f6; }
+
+        .step-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 5px; margin-bottom: 2px; }
+        .spin { animation: spin 1s linear infinite; display: inline-block; }
+        .pulse { animation: pulse 1.2s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+        .fadein { animation: fadein .3s ease-out; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+      `}</style>
+
+      {/* ── LOCAL FILE WARNING BANNER ── */}
+      {typeof window !== "undefined" && window.location.protocol === "file:" && (
+        <div style={{ background: "#fffbeb", borderBottom: "1px solid #fde68a", padding: "9px 18px", display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#92400e", flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, flexShrink: 0 }}>⚠ Running from a local file</span>
+          <span style={{ color: "#b45309" }}>The Claude API will be blocked by your browser. To run this:</span>
+          <span style={{ fontWeight: 600 }}>① Upload to <a href="https://tiiny.host" target="_blank" style={{ color: "#d97706" }}>tiiny.host</a> for an instant free URL</span>
+          <span style={{ color: "#d1d5db" }}>or</span>
+          <span style={{ fontWeight: 600 }}>② In Terminal: <code style={{ background: "#fef3c7", padding: "1px 6px", borderRadius: 3 }}>npx serve .</code> then open localhost:3000</span>
+          <span style={{ color: "#d1d5db" }}>or</span>
+          <span style={{ fontWeight: 600 }}>③ VS Code → right-click → Open with Live Server</span>
+        </div>
+      )}
+
+      {/* ── HEADER ── */}
+      <div style={{ background: "white", borderBottom: "1px solid #e5e7eb", padding: "13px 22px", display: "flex", alignItems: "center", flexShrink: 0 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#111827" }}>⚡ Pre-Call Intelligence Agent</div>
+          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1, fontWeight: 500 }}>Laurel AI Ops · 4 Scenarios</div>
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 5 }}>
+          {[["SF", "#0ea5e9"], ["GONG", "#7c3aed"], ["CLAUDE", "#059669"], ["→ SLACK", "#d97706"]].map(([s, c]) => (
+            <span key={s} className="badge" style={{ background: `${c}12`, color: c, border: `1px solid ${c}25` }}>{s}</span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+
+        {/* ── SIDEBAR ── */}
+        <div style={{ width: 250, borderRight: "1px solid #e5e7eb", background: "white", padding: "16px 12px", display: "flex", flexDirection: "column", gap: 14, overflowY: "auto", flexShrink: 0 }}>
+          <div>
+            <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", marginBottom: 8 }}>Scenarios</div>
+            {ACCOUNTS.map(a => (
+              <div key={a.id} className={`acc ${selectedId === a.id ? "sel" : ""}`} style={{ marginBottom: 6 }}
+                onClick={() => { setSelectedId(a.id); setResults(null); setDoneSteps([]); setActiveStep(null); setError(null); setHasRun(false); }}>
+                <span className="badge" style={{ background: `${a.scenario.color}12`, color: a.scenario.color, border: `1px solid ${a.scenario.color}25`, marginBottom: 4, fontSize: 10 }}>{a.scenario.tag}</span>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", marginBottom: 1 }}>{a.name}</div>
+                <div style={{ fontSize: 12, color: "#6b7280" }}>{a.scenario.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {account && (
+            <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 7, padding: "10px 12px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#9ca3af", letterSpacing: ".07em", textTransform: "uppercase", marginBottom: 5 }}>
+                {account.scenario.tag === "Standard" ? "Scenario" : "Edge Case"}
+              </div>
+              <div style={{ fontSize: 12, color: "#374151", lineHeight: 1.6 }}>{account.scenario.description}</div>
+            </div>
+          )}
+
+          <button className="run-btn" disabled={!selectedId || isRunning} onClick={run}>
+            {isRunning ? "⟳  Running..." : "▶  Run Agent"}
+          </button>
+
+          <div>
+            <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", marginBottom: 8 }}>Pipeline</div>
+            {STEPS.map(step => {
+              const done = doneSteps.includes(step.key), active = activeStep === step.key;
+              return (
+                <div key={step.key} className="step-row" style={{ background: done ? "#f0fdf4" : active ? "#eff6ff" : "transparent" }}>
+                  <div style={{ width: 22, height: 22, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, background: done ? "#dcfce7" : active ? "#dbeafe" : "#f3f4f6", color: done ? "#16a34a" : active ? "#2563eb" : "#9ca3af", border: `1px solid ${done ? "#bbf7d0" : active ? "#bfdbfe" : "#e5e7eb"}` }}>
+                    {done ? "✓" : active ? <span className="spin">◌</span> : "·"}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: done ? "#16a34a" : active ? "#2563eb" : "#6b7280" }}>{step.label}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{step.sub}</div>
+                  </div>
+                  {active && <div className="pulse" style={{ marginLeft: "auto", width: 5, height: 5, borderRadius: "50%", background: "#2563eb" }} />}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── MAIN ── */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+
+          {!selectedId && (
+            <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <div style={{ fontSize: 32, opacity: .15 }}>◈</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>Select a scenario to begin</div>
+              <div style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", maxWidth: 280, lineHeight: 1.6, marginTop: 4 }}>
+                Choose a normal report or one of three edge cases to see how the agent handles each differently.
+              </div>
+            </div>
+          )}
+
+          {selectedId && !results && !isRunning && (!error || !hasRun) && (
+            <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <div style={{ fontSize: 26 }}>▶</div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#6b7280" }}>Ready</div>
+              <div style={{ fontSize: 13, color: "#9ca3af", textAlign: "center", maxWidth: 300, lineHeight: 1.7 }}>
+                Click <strong style={{ color: "#2563eb" }}>Run Agent</strong> to pull mock data and chain through 4 Claude prompts automatically.
+              </div>
+              <div style={{ background: `${account?.scenario.color}10`, border: `1px solid ${account?.scenario.color}25`, borderRadius: 6, padding: "7px 14px", fontSize: 12, color: account?.scenario.color, fontWeight: 600, marginTop: 4 }}>
+                {account?.scenario.tag}: {account?.scenario.label}
+              </div>
+            </div>
+          )}
+
+          {isRunning && (
+            <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <div style={{ position: "relative", width: 44, height: 44 }}>
+                <div style={{ width: 44, height: 44, borderRadius: "50%", border: "2px solid #e5e7eb", borderTopColor: "#2563eb" }} className="spin" />
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚡</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#6b7280" }}>
+                {activeStep === "fetch"      ? "Pulling Salesforce & Gong data..."
+                 : activeStep === "synthesize" ? "Synthesizing history and signals..."
+                 : activeStep === "compile"    ? "Generating talking points and agenda..."
+                 : "Compiling final brief for Slack..."}
+              </div>
+            </div>
+          )}
+
+          {error && hasRun && (
+            <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: 18, color: "#991b1b" }}>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>⚠ {error === "Failed to fetch" ? "Browser security is blocking the API call" : error}</div>
+              {error === "Failed to fetch" && (
+                <div style={{ fontSize: 13, lineHeight: 1.7, color: "#7f1d1d" }}>
+                  <p style={{ marginBottom: 8 }}>This happens when the file is opened directly from your desktop (<code style={{ background: "#fee2e2", padding: "1px 5px", borderRadius: 3 }}>file://</code>). Browsers block cross-origin API requests from local files for security.</p>
+                  <p style={{ fontWeight: 600, marginBottom: 6 }}>Two easy fixes:</p>
+                  <ol style={{ paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <li><strong>Serve it locally:</strong> Open Terminal, run <code style={{ background: "#fee2e2", padding: "1px 5px", borderRadius: 3 }}>npx serve .</code> in the folder containing this file, then open <code style={{ background: "#fee2e2", padding: "1px 5px", borderRadius: 3 }}>http://localhost:3000</code></li>
+                    <li><strong>Use VS Code Live Server:</strong> Right-click the file in VS Code → "Open with Live Server"</li>
+                    <li><strong>Upload to any host:</strong> Drag this file to <a href="https://tiiny.host" target="_blank" style={{ color: "#dc2626" }}>tiiny.host</a> for a free instant URL — no account needed</li>
+                  </ol>
+                  <p style={{ marginTop: 10, color: "#9ca3af", fontSize: 12 }}>Note: When Laurel opens this from a hosted URL (e.g. sent via email and hosted online), it will work immediately with no changes needed.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {results && (
+            <div className="fadein">
+              {/* Tabs */}
+              <div style={{ display: "flex", gap: 4, marginBottom: 16, paddingBottom: 12, borderBottom: "1px solid #e5e7eb" }}>
+                {[["slack", "💬 Slack Output"], ["source", "🗄 Source Data"], ["raw", "⚙ Raw Outputs"]].map(([k, l]) => (
+                  <button key={k} className={`tab ${tab === k ? "on" : ""}`} onClick={() => setTab(k)}>{l}</button>
+                ))}
+              </div>
+
+              {tab === "slack" && (
+                <div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 10, fontWeight: 600, letterSpacing: ".04em", textTransform: "uppercase" }}>
+                    Simulated output — what {account.ae} sees in #sales-call-briefs
+                  </div>
+                  <SlackShell account={account} results={results} />
+                </div>
+              )}
+
+              {tab === "source" && (
+                <div>
+                  <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 18px", marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0ea5e9", marginBottom: 10, textTransform: "uppercase", letterSpacing: ".06em", fontSize: 11 }}>☁ Salesforce</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
+                      {[["Account", account.salesforce.account], ["Industry", account.salesforce.industry], ["Stage", account.salesforce.stage], ["Deal Size", account.salesforce.dealSize], ["Risk", account.salesforce.dealRisk], ["Employees", account.salesforce.employees]].map(([k, v]) => (
+                        <div key={k} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 5, padding: "7px 10px" }}>
+                          <div style={{ fontSize: 10, color: "#9ca3af", marginBottom: 1, fontWeight: 600 }}>{k.toUpperCase()}</div>
+                          <div style={{ fontSize: 13, color: "#111827", fontWeight: 500 }}>{v}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {account.salesforce.history.length > 0 ? (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: 7 }}>Activity History</div>
+                        {account.salesforce.history.map((h, i) => (
+                          <div key={i} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 5, padding: "7px 10px", marginBottom: 5 }}>
+                            <div style={{ display: "flex", gap: 6, marginBottom: 2 }}>
+                              <span className="badge" style={{ background: "#e0f2fe", color: "#0369a1", fontSize: 10 }}>{h.type}</span>
+                              <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 500 }}>{h.date}</span>
+                            </div>
+                            <div style={{ fontSize: 12, color: "#374151" }}>{h.note}</div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div style={{ fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>No activity history.</div>
+                    )}
+                  </div>
+
+                  <div style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 8, padding: "16px 18px" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#7c3aed", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 10 }}>🎙 Gong</div>
+                    {account.gong.calls.length === 0 ? (
+                      <div style={{ fontSize: 12, color: "#9ca3af", fontStyle: "italic" }}>
+                        {results?.isMissingGong ? "⚠ No Gong call recordings found — brief generated from Salesforce only." : "No prior calls on record."}
+                      </div>
+                    ) : account.gong.calls.map((c, i) => (
+                      <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: i < account.gong.calls.length - 1 ? "1px solid #f3f4f6" : "none" }}>
+                        <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "#111827" }}>{c.date}</span>
+                          <span className="badge" style={{ background: "#f3e8ff", color: "#7c3aed", fontSize: 10 }}>{c.duration}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: sentimentColor(c.sentiment) }}>Sentiment {c.sentiment.toFixed(2)}</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 6 }}>{c.participants.join(" · ")}</div>
+                        {c.highlights.map((h, j) => (
+                          <div key={j} style={{ fontSize: 12, color: "#374151", padding: "3px 0 3px 10px", borderLeft: "2px solid #e5e7eb", marginBottom: 4, lineHeight: 1.5 }}>{h}</div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tab === "raw" && (
+                <div>
+                  <div style={{ fontSize: 11, color: "#6b7280", marginBottom: 10, padding: "8px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 6, lineHeight: 1.6 }}>
+                    The 4 prompts run as <strong>2 parallel API calls</strong> for speed — Steps 1+2 fire together, Steps 3+4 fire together. The JSON below is the raw output from each call before it is formatted into the brief above.
+                  </div>
+                  {[["Steps 1 & 2 — Data Extraction + Sentiment Analysis", "#7c3aed", results.history_analysis], ["Steps 3 & 4 — Recommendations + Compiled Brief", "#059669", results.recommendations]].map(([l, c, d]) => (
+                    <div key={l} style={{ background: "white", border: "1px solid #e5e7eb", borderRadius: 8, padding: "14px 16px", marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: c, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 8 }}>{l}</div>
+                      <pre style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.7, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word", fontFamily: "monospace" }}>{JSON.stringify(d, null, 2)}</pre>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+    const loadingEl = document.getElementById('loading');
+    if (loadingEl) loadingEl.style.display = 'none';
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
