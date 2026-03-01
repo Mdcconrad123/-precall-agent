@@ -226,7 +226,7 @@ const ACCOUNTS = [
 
 // ── CLAUDE ────────────────────────────────────────────────────────────────────
 async function callClaude(system, user) {
-  const res = await fetch("/.netlify/functions/claude", {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -292,46 +292,149 @@ async function runPipeline(account, onStep) {
   const [history_analysis, recommendations] = await Promise.all([
     // Call A: extract facts + analyze history in one shot
     callClaude(
-      `You are a senior sales intelligence analyst. Produce a thorough historical analysis. The richer the data, the more detailed your output.
+      `You are a senior sales intelligence analyst. You receive structured CRM and call data and produce a thorough historical analysis. Ground every observation in the data. Do not invent signals not present in the source.
+The richer the data, the more detailed your output. Never truncate signals.
 
-FIRST-TIME PROSPECT OVERRIDE: If first_time_prospect = true OR calls = [] AND activity_history = [], set key_signals = [], risks_from_history = [], sentiment_score = null, sentiment_label = 'First call — no history', and account_summary to 1-2 sentences confirming only what Salesforce shows.
+Output JSON with these exact fields:
+  sentiment_score:      float -1.0 to 1.0
+                        Recency-weighted: weight recent calls 2x earlier calls.
+                        If no calls, set to null.
+  sentiment_label:      string (e.g. "Consistently Positive", "Mixed — see warnings")
+  account_summary:      3-4 sentences on company situation and deal health.
+  call_progression:     2-4 sentences on how the relationship evolved across calls.
+                        Be specific about turning points.
+                        If no calls, set to null.
+  key_signals:          array — every meaningful signal from calls and emails,
+                        with direct quotes where available. Min 4, no max.
+                        If no data, return [].
+  risks_from_history:   array — every risk: open items, unanswered questions,
+                        stakeholder gaps. Min 2, no max.
+  objections_raised:    array — every objection the prospect actually voiced.
+                        Quote them if possible. Return [] if none.
+  data_warnings:        array — ALWAYS populate if any of the below apply.
+                        This field is never omitted when edge cases are present.
 
-Otherwise output JSON with:
-- sentiment_score: float -1.0 to 1.0 (recency-weighted)
-- sentiment_label: string (e.g. 'Consistently Positive')
-- account_summary: 3-4 sentences on company situation and deal health
-- call_progression: 2-4 sentences on how the relationship evolved
-- key_signals: array — every meaningful signal, with direct quotes. Min 4.
-- risks_from_history: array — every risk and stakeholder gap. Min 2.
-- objections_raised: array — every objection the prospect actually voiced.
-- data_warnings: array — always populated when edge cases are present.
+── EDGE CASE INSTRUCTIONS ───────────────────────────────────────────────────────
 
-Missing Gong: set sentiment = null, omit call_progression, note in warnings.
-Mixed signals (positive Gong + At Risk SF): surface both explicitly.
+MISSING GONG DATA (gong_available = false — calls array was empty):
+  Set sentiment_score = null.
+  Set sentiment_label = "No call data available".
+  Set call_progression = null.
+  Do not reference call sentiment, highlights, or tone anywhere.
+  Add to data_warnings: "No Gong call data found. Analysis based on Salesforce
+    records only. AE should review and update Salesforce before this call."
+  Base account_summary and key_signals on Salesforce activity history only.
+
+MISSING SALESFORCE FIELDS (one or more SF fields null):
+  For each missing field, add a specific entry to data_warnings:
+    - Missing deal stage:   "Deal stage not set in Salesforce. AE should update
+                             the opportunity stage before this call."
+    - Missing contacts:     "No contacts found in Salesforce. AE should add
+                             contact records (name, title, email) to this account."
+    - Missing activity:     "No activity history in Salesforce. AE should log
+                             recent emails, calls, and meetings as activity records."
+    - Missing open opps:    "No open opportunity found. AE should create an
+                             opportunity record in Salesforce for this deal."
+  Still generate account_summary and key_signals from whatever data exists.
+  Do not omit sections entirely — work with partial data and flag the gaps.
+
+MISSING BOTH SALESFORCE AND GONG:
+  Set all fields to null or [].
+  Add to data_warnings: "No Salesforce or Gong data found for this account.
+    Brief cannot be generated. AE should add the account to Salesforce and
+    ensure calls are being recorded in Gong before the next meeting."
+  Do not attempt to generate signals, risks, or summaries.
+
+FIRST-TIME PROSPECT (calls = [], activity_history = []):
+  Set call_progression = null.
+  Set sentiment_score = null.
+  Set sentiment_label = "First call — no history available".
+  Set key_signals = [] (no signals to report yet).
+  Add to data_warnings: "No prior call or activity history found. This is a
+    first-call scenario. After the call, AE should log notes and ensure the
+    call is recorded in Gong so future briefs have signal data."
+  Still populate account_summary from whatever Salesforce fields exist.
+
+CONFLICTING SIGNALS (positive Gong + At Risk Salesforce):
+  Detect this when: sentiment_score >= 0.5 AND account.dealRisk = "At Risk".
+  Do NOT average the signals or present a neutral picture.
+  Surface both signals explicitly in key_signals.
+  Add to data_warnings: "CONFLICTING SIGNALS: Gong sentiment is positive but
+    Salesforce marks this deal At Risk. Do not present an optimistic picture.
+    Both signals are real. The AE must address the discrepancy directly."
+  Add the Salesforce risk indicator to risks_from_history even if Gong is positive.
+
 No markdown fences. Return raw JSON only.`,
       `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`
     ),
     // Call B: generate forward-looking recommendations directly from raw data
     callClaude(
-      `You are an expert B2B sales coach. Be concise — AE reads this in 2 minutes. Every recommendation must be grounded in the data. No generic advice.
+      `You are an expert B2B sales coach. Generate specific, actionable call recommendations. Every recommendation must be grounded in something concrete from the data provided. Generic advice is not acceptable.
+If you cannot ground a recommendation in the data, omit it.
+An AE reads this brief in under 2 minutes — be concise.
 
-FIRST-TIME PROSPECT OVERRIDE: If first_time_prospect = true, set:
-  call_goal: 'Run discovery — understand situation and fit before pitching.'
-  talking_points: []
-  suggested_agenda: ['Opening: confirm agenda', 'Discovery: open-ended questions on process and pain points', 'Next step: agree follow-up']
-  likely_objections: []
+Output JSON with these exact fields:
+  call_goal:          string — 1 sentence. Single most important thing to accomplish.
+  win_condition:      string — 1 sentence. What a successful outcome looks like.
+  biggest_risk:       string — 1 sentence. Most likely thing to derail this call.
+  suggested_agenda:   string[] — 3 items max.
+                      Format: "Topic: one-clause rationale."
+  talking_points:     string[] — 3 items max. One sentence each.
+                      Ground each in a quote, stakeholder, or past commitment.
+  likely_objections:  { objection: string, response: string }[] — 2 items max.
+                      Objection: short phrase. Response: 1 sentence, account-specific.
+  opening_line:       string — 1 sentence. Reference the last interaction specifically.
 
-Otherwise output JSON with:
-- call_goal: 1 sentence — single most important thing to accomplish
-- win_condition: 1 sentence — what a successful outcome looks like
-- biggest_risk: 1 sentence — most likely thing to derail the call
-- suggested_agenda: array of 3 items max, format 'Topic: rationale'
-- talking_points: array of 3 strings max, each grounded in a specific quote
-- likely_objections: [ { objection, response } ] — 2 items max
-- opening_line: 1 sentence referencing the last interaction specifically
+── EDGE CASE INSTRUCTIONS ───────────────────────────────────────────────────────
 
-Missing Gong: base talking points on SF activity only.
-Mixed signals: orient call_goal around resolving the discrepancy.
+MISSING GONG DATA (gong_available = false from Step 1):
+  Do not fabricate talking points based on calls that did not happen.
+  Base talking_points on Salesforce activity history and deal context only.
+  Set opening_line to reference the most recent Salesforce activity instead.
+  Add to suggested_agenda: "Data gap: AE to ask prospect to recap any prior
+    conversations to establish shared context early in the call."
+  Adjust biggest_risk to include: "No call history available — AE is going in
+    without visibility into prospect's tone, objections, or engagement signals."
+
+MISSING SALESFORCE FIELDS:
+  If deal stage is null: set call_goal to focus on qualifying the opportunity
+    and establishing next steps rather than closing or advancing a specific stage.
+  If contacts are missing: add to suggested_agenda: "Confirm stakeholders:
+    identify all decision-makers and their roles before moving forward."
+  If no open opportunity: adjust win_condition to include creating an
+    opportunity record as a concrete outcome of the call.
+  Do not reference CRM data fields that are null.
+
+MISSING BOTH SALESFORCE AND GONG:
+  Set call_goal, win_condition, biggest_risk, and opening_line to null.
+  Set suggested_agenda, talking_points, likely_objections to [].
+  This state should have been caught by the orchestrator before Step 3 runs.
+
+FIRST-TIME PROSPECT (no prior calls, no activity history):
+  Do not generate prep-based talking points — there is no history to prep from.
+  Reframe the entire brief around discovery:
+    call_goal: Understand the prospect's current situation, priorities, and fit.
+    win_condition: Prospect agrees to a follow-up with relevant stakeholders.
+    biggest_risk: Call becomes a pitch before fit is established.
+  Replace talking_points with open-ended discovery questions:
+    e.g. "What does your current [process] look like today?"
+         "What's driving the urgency to look at solutions now?"
+         "Who else would typically be involved in a decision like this?"
+  Set opening_line to a warm, referral-based or context-based opener
+    referencing how the prospect was referred or why they reached out.
+
+CONFLICTING SIGNALS (positive Gong + At Risk Salesforce):
+  Do not generate an optimistic call_goal or opening_line.
+  Orient the call_goal around resolving the discrepancy:
+    e.g. "Find out what changed since [last positive call] and why the
+         contract has not been returned."
+  Set biggest_risk to the silence or inaction, not a product objection.
+  Set opening_line to directly and professionally acknowledge the gap:
+    e.g. "I wanted to check in directly — it's been [X days] since we sent
+         the contract and I want to make sure nothing got in the way."
+  Add a talking point that addresses the gap between Gong enthusiasm and
+    Salesforce status — the AE must name it, not avoid it.
+
 No markdown fences. Return raw JSON only.`,
       `scenario: "${account.scenario.label}"\nfirst_time_prospect: ${isFirstTime}\ncalls_exist: ${account.gong.calls.length > 0}\nactivity_exists: ${account.salesforce.history.length > 0}\n\n${rawData}`
     ),
