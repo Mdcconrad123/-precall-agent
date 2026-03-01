@@ -5,11 +5,21 @@ exports.handler = async function(event) {
 
   const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   if (!ANTHROPIC_API_KEY) {
-    return { statusCode: 500, body: JSON.stringify({ error: "API key not configured" }) };
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "ANTHROPIC_API_KEY not set" })
+    };
+  }
+
+  let body;
+  try { body = JSON.parse(event.body); }
+  catch(e) {
+    return { statusCode: 400, headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
   try {
-    const body = JSON.parse(event.body);
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -20,16 +30,21 @@ exports.handler = async function(event) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-    return {
-      statusCode: 200,
+    const rawText = await response.text();
+
+    if (!response.ok) {
+      return { statusCode: response.status,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "Anthropic API error", detail: rawText }) };
+    }
+
+    return { statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
-    };
+      body: rawText };
+
+  } catch(err) {
+    return { statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: err.message }) };
   }
 };
